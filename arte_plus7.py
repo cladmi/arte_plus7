@@ -1,23 +1,57 @@
 #! /usr/bin/python
 # -*- coding:utf-8 -*-
+""" arte_plus_7 is a script to help download arte videos
+
+It's only configured for French at the moment.
+
+Usage:
+
+The following commands will return the videos urls found
+
+    # The generic program page
+    ./arte_plus_7.py -u http://www.arte.tv/guide/fr/emissions/TRA/tracks
+    # The page dedicated to the video
+    ./arte_plus_7.py -u http://www.arte.tv/guide/fr/034049-007/karambolage
+
+    # Direct access to some pre-stored programs
+    ./arte_plus_7.py -p tracks
+
+To actually download the video, add a '--qualiy <QUAL>' for the one you want
+from the list
+
+    # Direct access to some pre-stored programs
+    ./arte_plus_7.py -p tracks --quality <HQ|EQ|SQ'>
+
+
+Debug:
+
+    # Use the option --keep-artifacts to save intermediate files to help adding
+    # features
+    ./arte_plus_7.py -u URL --keep-artifacts
+
+    """
 
 from __future__ import print_function
 
+# pylint:disable=locally-disabled,import-error,no-name-in-module
 try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
 
-
 from datetime import datetime
 from bs4 import BeautifulSoup
-import re
 import json
-import sys
 import subprocess
 import argparse
 
+
 class ArtePlus7(object):
+    """ ArtePlus7 helps getting arte videos link and download them """
+    programs = {
+        'tracks': 'http://www.arte.tv/guide/fr/emissions/TRA/tracks',
+        'karambolage': 'http://www.arte.tv/guide/fr/emissions/KAR/karambolage',
+    }
 
     def __init__(self, url, quality=None, keep_artifacts=False):
         self.url = url
@@ -32,6 +66,7 @@ class ArtePlus7(object):
         self.summary_dict = None
 
     def videos_url(self):
+        """ Return the video download urls """
         self._get_page_soup()
         self._get_videos_dict()
         self._get_videos_urls_dict()
@@ -45,6 +80,7 @@ class ArtePlus7(object):
         return self.page_soup
 
     def _get_videos_dict(self):
+        """ Extract the the videos description dict """
         json_url = self._get_json_url(self.page_soup)
         json_content = self._get_page_content(json_url)
         self.videos_dict = json.loads(json_content)
@@ -80,6 +116,7 @@ class ArtePlus7(object):
         return self.summary_dict
 
     def _get_json_url(self, soup):
+        """ Find the json url from the page extract bs4.soup """
         tags = soup.find_all(self._select_json_entry)
         urls = set([tag['arte_vp_url'] for tag in tags])
         assert len(urls) == 1, "No url founds, may it's not available anymore"
@@ -87,23 +124,22 @@ class ArtePlus7(object):
 
     @staticmethod
     def _select_json_entry(tag):
-        ok = True
-        ok = ok and tag.has_attr('class')
-        ok = ok and tag.has_attr('arte_vp_lang')
-        ok = ok and tag.has_attr('arte_vp_config')
-        ok = ok and tag.has_attr('arte_vp_url')
-        if not ok:
+        """ Tells in this tag is the requested json url file """
+        keep = True
+        keep = keep and tag.has_attr('class')
+        keep = keep and tag.has_attr('arte_vp_lang')
+        keep = keep and tag.has_attr('arte_vp_config')
+        keep = keep and tag.has_attr('arte_vp_url')
+        if not keep:
             return False
 
         try:
-            ok = ok and (tag['arte_vp_lang'] == 'fr_FR')
-
-            url = tag['arte_vp_url']
-            ok = ok and 'PLUS7-F' in url
+            keep = keep and (tag['arte_vp_lang'] == 'fr_FR')
+            keep = keep and 'PLUS7-F' in tag['arte_vp_url']
         except KeyError:
             return False
 
-        return ok
+        return keep
 
     @staticmethod
     def _get_page_content(url):
@@ -120,6 +156,7 @@ class ArtePlus7(object):
         subprocess.call(cmd)
 
     def _save_artifacts(self):
+        """ Save the script artifacts to help adding features """
         if not self.keep_artifacts:
             return
         name = self.video_name
@@ -132,7 +169,7 @@ class ArtePlus7(object):
                 ).encode('utf-8')
             )
         with open(name + '_summary.json', 'w') as summary:
-            summary.write(
+            summary.write.summary_dict.write(
                 json.dumps(
                     self.summary_dict, indent=4, sort_keys=True
                 ).encode('utf-8')
@@ -140,26 +177,37 @@ class ArtePlus7(object):
 
     @staticmethod
     def parser():
-        parser = argparse.ArgumentParser(description=u'ArtePlus7 videos download')
-        parser.add_argument('url',
-                            help=u'Arte page to download video from')
+        """ arte_plus_7 parser """
+        parser = argparse.ArgumentParser(
+            description=u'ArtePlus7 videos download')
+        vid_parser = parser.add_mutually_exclusive_group(required=True)
+        vid_parser.add_argument('-u', '--url',
+                                help=u'Arte page to download video from')
+        vid_parser.add_argument('-p', '--program',
+                                choices=ArtePlus7.programs.keys(),
+                                help=u'Download given program')
+
         parser.add_argument('-q', '--quality', choices=(u'HQ', u'EQ', u'SQ'),
                             help=u'Video quality to download')
-        parser.add_argument('--keep-artifacts', action='store_true', default=False,
+        parser.add_argument('--keep-artifacts', action='store_true',
+                            default=False,
                             help=u'Keep intermediate files artifacts')
         return parser
 
 
 def main():
+    """ arte_plus_7 main function """
     opts = ArtePlus7.parser().parse_args()
-    arte_plus_7 = ArtePlus7(opts.url, opts.quality, opts.keep_artifacts)
+    url = opts.url or ArtePlus7.programs[opts.program]
+
+    arte_plus_7 = ArtePlus7(url, opts.quality, opts.keep_artifacts)
 
     urls_dict = arte_plus_7.videos_url()
 
     if opts.quality is not None:
         arte_plus_7.download_video()
     else:
-        print(json.dumps(urls_dict, indent=4, sort_keys=True).encode('utf-8'))
+        print(json.dumps(urls_dict, indent=4, sort_keys=True))
 
 
 if __name__ == '__main__':
