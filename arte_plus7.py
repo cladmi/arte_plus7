@@ -169,7 +169,7 @@ class ArtePlus7(object):
                 ).encode('utf-8')
             )
         with open(name + '_summary.json', 'w') as summary:
-            summary.write.summary_dict.write(
+            summary.write(
                 json.dumps(
                     self.summary_dict, indent=4, sort_keys=True
                 ).encode('utf-8')
