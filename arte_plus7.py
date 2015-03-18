@@ -46,6 +46,8 @@ import json
 import subprocess
 import argparse
 
+__version__ = '1.0.0'
+
 
 class ArtePlus7(object):
     """ ArtePlus7 helps getting arte videos link and download them """
