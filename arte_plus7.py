@@ -39,6 +39,7 @@ try:
 except ImportError:
     from urllib2 import urlopen
 
+import os.path
 from datetime import datetime
 from bs4 import BeautifulSoup
 import json
@@ -147,12 +148,17 @@ class ArtePlus7(object):
         ret = urlopen(url).read().decode('utf-8')
         return ret
 
-    def download_video(self):
+    def download_video(self, directory=None):
         """ Download the video """
+        directory = directory or '.'
+
         url = self.summary_dict['urls'][self.quality]
-        dl_name = '{name}_{quality}.mp4'.format(
-            name=self.video_name, quality=self.quality)
-        cmd = ['wget', '--continue', url, '-O', dl_name]
+        dl_name = '{name}_{quality}.mp4'
+        dl_name = dl_name.format(name=self.video_name, quality=self.quality)
+        dl_name = os.path.join(directory, dl_name)
+
+        cmd = ['wget', '--continue', '-O', dl_name, url]
+        print(' '.join(cmd))
         subprocess.call(cmd)
 
     def _save_artifacts(self):
@@ -192,6 +198,9 @@ class ArtePlus7(object):
         parser.add_argument('--keep-artifacts', action='store_true',
                             default=False,
                             help=u'Keep intermediate files artifacts')
+
+        parser.add_argument('-d', '--download-directory', default='.',
+                            help=u'Directory where to save file')
         return parser
 
 
@@ -205,7 +214,7 @@ def main():
     urls_dict = arte_plus_7.videos_url()
 
     if opts.quality is not None:
-        arte_plus_7.download_video()
+        arte_plus_7.download_video(opts.download_directory)
     else:
         print(json.dumps(urls_dict, indent=4, sort_keys=True))
 
