@@ -27,7 +27,7 @@ setup(
     description='CLI script to get videos from Arte plus 7 using their URL',
     author='cladmi',
     download_url='https://github.com/cladmi/arte_plus7',
-    py_modules=NAME,
+    py_modules=[NAME],
     entry_points={
         'console_scripts': ['{name} = {name}:main'.format(name=NAME)],
     },
