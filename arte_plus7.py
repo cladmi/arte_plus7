@@ -20,7 +20,7 @@ To actually download the video, add a '--qualiy <QUAL>' for the one you want
 from the list
 
     # Direct access to some pre-stored programs
-    ./arte_plus_7.py -p tracks --quality <HQ|EQ|SQ'>
+    ./arte_plus_7.py -p tracks --quality <MQ|HQ|EQ|SQ'>
 
 
 Debug:
@@ -195,7 +195,8 @@ class ArtePlus7(object):
                                 choices=ArtePlus7.programs.keys(),
                                 help=u'Download given program')
 
-        parser.add_argument('-q', '--quality', choices=(u'HQ', u'EQ', u'SQ'),
+        parser.add_argument('-q', '--quality',
+                            choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
                             help=u'Video quality to download')
         parser.add_argument('--keep-artifacts', action='store_true',
                             default=False,
