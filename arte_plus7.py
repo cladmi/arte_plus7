@@ -39,6 +39,7 @@ try:
 except ImportError:
     from urllib2 import urlopen
 
+import sys
 import os.path
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -51,9 +52,11 @@ __version__ = '1.0.0'
 
 class ArtePlus7(object):
     """ ArtePlus7 helps getting arte videos link and download them """
+    PROGRAMS_JSON_URL = 'http://www.arte.tv/guide/fr/plus7.json'
     programs = {
-        'tracks': 'http://www.arte.tv/guide/fr/emissions/TRA/tracks',
-        'karambolage': 'http://www.arte.tv/guide/fr/emissions/KAR/karambolage',
+        'tracks': 'Tracks',
+        'karambolage': 'Karambolage',
+        'xenius': 'X:enius',
     }
 
     def __init__(self, url, quality=None, keep_artifacts=False):
@@ -67,6 +70,33 @@ class ArtePlus7(object):
         self.page_soup = None
         self.videos_dict = None
         self.summary_dict = None
+
+    @classmethod
+    def _programs_dict(cls):
+        """ Get the whole programs dict
+        Returns it as a dict title:list_of_programs """
+        json_content = cls._get_page_content(cls.PROGRAMS_JSON_URL)
+        programs = json.loads(json_content)
+        # there might be multiple videos with the same title
+        # they will be sorted, I think, with newest first
+        programs_dict = {}
+        for program in programs['videos']:
+            programs_dict.setdefault(program['title'], []).append(program)
+        return programs_dict
+
+    @classmethod
+    def program_url(cls, name):
+        """ Return the url for given program """
+        programs = cls._programs_dict()
+        try:
+            progs = programs[name]
+            if len(progs) > 1:
+                print('Found multiple videos, using the last one',
+                      file=sys.stderr)
+            return progs[0]['url']
+        except KeyError:
+            print('No videos found for program: {0}'.format(name))
+            exit(1)
 
     def videos_url(self):
         """ Return the video download urls """
@@ -210,7 +240,7 @@ class ArtePlus7(object):
 def main():
     """ arte_plus_7 main function """
     opts = ArtePlus7.parser().parse_args()
-    url = opts.url or ArtePlus7.programs[opts.program]
+    url = opts.url or ArtePlus7.program_url(ArtePlus7.programs[opts.program])
 
     arte_plus_7 = ArtePlus7(url, opts.quality, opts.keep_artifacts)
 
