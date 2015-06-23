@@ -29,7 +29,7 @@ Debug:
     # features
     ./arte_plus_7.py -u URL --keep-artifacts
 
-    """
+"""
 
 from __future__ import print_function
 
@@ -47,7 +47,7 @@ import json
 import subprocess
 import argparse
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 
 class ArtePlus7(object):

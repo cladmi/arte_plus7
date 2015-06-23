@@ -25,9 +25,6 @@ To actually download the video, add a '--qualiy <QUAL>' for the one you want
 from the list
 
     # Direct access to some pre-stored programs
-    ./arte_plus_7.py -p tracks --quality <HQ|EQ|SQ'>
-
-
-
+    ./arte_plus_7.py -p tracks --quality <MQ|HQ|EQ|SQ'>
 
 
