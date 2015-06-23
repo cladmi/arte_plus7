@@ -35,7 +35,7 @@ setup(
         'Development Status :: 4 - Beta',
         'Programming Language :: Python',
         'Intended Audience :: End Users/Desktop',
-        'Topic :: utilities',
+        'Topic :: Utilities',
     ],
     install_requires=['argparse', 'beautifulsoup4'],
 )
