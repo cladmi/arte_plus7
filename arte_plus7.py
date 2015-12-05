@@ -33,6 +33,9 @@ Debug:
 
 from __future__ import print_function
 
+import re
+import os.path
+
 # pylint:disable=locally-disabled,import-error,no-name-in-module
 try:
     from urllib.request import urlopen
@@ -41,9 +44,6 @@ except ImportError:
     from urllib2 import urlopen
     from urllib2 import HTTPError
 
-import re
-import sys
-import os.path
 from datetime import datetime
 import bs4
 import json
@@ -52,7 +52,7 @@ import argparse
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-__version__ = '1.0.1'
+__version__ = '2.X.X'
 
 
 def page_read(url):
@@ -60,12 +60,17 @@ def page_read(url):
     logging.debug('Reading %s', url)
     return urlopen(url).read().decode('utf-8')
 
+
 def page_soup(page):
     """Get the page soup."""
     return bs4.BeautifulSoup(page, 'html.parser')
 
 
 class Plus7Program(object):
+    """Describes an ArtePlus7 video.
+
+    :param video_id: video unique id
+    """
     JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/D/'
                 '{0}_PLUS7-D/ALL/ALL.json')
 
@@ -87,6 +92,7 @@ class Plus7Program(object):
         self.urls = self._extract_videos(player['VSR'])
 
     def infos(self, values=('date', 'name', 'full_name', 'urls')):
+        """Return a dict describing the object."""
         values = set(values)
         ret = {p: v for p, v in self.__dict__.items() if p in values}
         return ret
@@ -127,6 +133,7 @@ class Plus7Program(object):
 
     @classmethod
     def by_url(cls, url):
+        """Return Plus7Program for given `url`."""
         video_id = cls._id_from_url(url)
         return Plus7Program(video_id)
 
@@ -146,13 +153,13 @@ class Plus7Program(object):
         ...   'http://www.arte.tv/guide/fr/058941-008/tracks')
         '058941-008'
         """
-        url = re.sub('\?.*', '', url)
+        url = re.sub(r'\?.*', '', url)
         video_id = url.split('/')[-2]
         return video_id
 
 
 class ArtePlus7(object):
-    """ ArtePlus7 helps getting arte videos link and download them """
+    """ArtePlus7 helps using arte website."""
     PROGRAMS_JSON_URL = 'http://www.arte.tv/guide/fr/plus7.json'
     PROGRAMS = {
         'tracks': 'Tracks',
@@ -161,18 +168,18 @@ class ArtePlus7(object):
     }
     PROGRAMS_SEARCH = 'http://www.arte.tv/guide/fr/search?scope=plus7&q={0}'
 
-
-    def __init__(self):
-        pass
-
     @classmethod
     def search(cls, search_str):
+        """Search program with given `search_str`.
+
+        It will be passed directly as a search query string
+        """
         logging.info('Searching %s', search_str)
         url = cls.PROGRAMS_SEARCH.format(search_str)
         soup = page_soup(page_read(url))
-        tag = soup.find(cls._search_results)
+        tag = soup.find(cls.search_results)
 
-        program_dict = cls._extract_program_dict(tag.text)
+        program_dict = cls.extract_program_dict(tag.text)
         programs = []
         for program in program_dict['programs']:
             try:
@@ -182,12 +189,12 @@ class ArtePlus7(object):
             else:
                 programs.append(prog)
 
-        programs.sort(key=lambda p:p.timestamp, reverse=True)
+        programs.sort(key=lambda p: p.timestamp, reverse=True)
 
         return programs
 
     @staticmethod
-    def _search_results(tag):
+    def search_results(tag):
         """ Tells in this tag is the requested json url file """
         # Script matching
         script_re = re.compile(r"require\('js/page/search'\)\(")
@@ -199,7 +206,9 @@ class ArtePlus7(object):
         return keep
 
     @staticmethod
-    def _extract_program_dict(text):
+    def extract_program_dict(text):
+        """Extract program dict from script tag."""
+        line = ''
         for line in text.splitlines():
             if re.search('results:', line):
                 break
@@ -209,65 +218,56 @@ class ArtePlus7(object):
         line = re.sub(r'^\s*results: ', '', line)
         line = re.sub(r',$', '', line)
 
-        program_dict = json.loads(line)
         return json.loads(line)
 
 
-    @staticmethod
-    def parser():
-        """ arte_plus_7 parser """
-        parser = argparse.ArgumentParser(
-            description=u'ArtePlus7 videos download')
-        vid_parser = parser.add_mutually_exclusive_group(required=True)
-        vid_parser.add_argument('-u', '--url',
-                                help=u'Arte page to download video from')
-        vid_parser.add_argument('-p', '--program',
-                                choices=ArtePlus7.PROGRAMS.keys(),
-                                help=u'Download given program')
-        vid_parser.add_argument('-s', '--search', help=u'Search given program')
+def parser():
+    """ arte_plus_7 parser """
+    _parser = argparse.ArgumentParser(
+        description=u'ArtePlus7 videos download')
+    vid_parser = _parser.add_mutually_exclusive_group(required=True)
+    vid_parser.add_argument('-u', '--url',
+                            help=u'Arte page to download video from')
+    vid_parser.add_argument('-p', '--program',
+                            choices=ArtePlus7.PROGRAMS.keys(),
+                            help=u'Download given program')
 
-        parser.add_argument('-n', '--num-programs', type=int,
-                            help=u'Max number of programs to download')
+    _parser.add_argument('-q', '--quality',
+                         choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
+                         help=u'Video quality to download')
+    _parser.add_argument('--keep-artifacts', action='store_true',
+                         default=False,
+                         help=u'Keep intermediate files artifacts')
 
-        parser.add_argument('-q', '--quality',
-                            choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
-                            help=u'Video quality to download')
-        parser.add_argument('--keep-artifacts', action='store_true',
-                            default=False,
-                            help=u'Keep intermediate files artifacts')
-
-        parser.add_argument('-d', '--download-directory', default='.',
-                            help=u'Directory where to save file')
-        return parser
+    _parser.add_argument('-d', '--download-directory', default='.',
+                         help=u'Directory where to save file')
+    return _parser
 
 
 def main():
     """ arte_plus_7 main function """
-    opts = ArtePlus7.parser().parse_args()
+    opts = parser().parse_args()
 
+    # Get programs
     if opts.url:
         programs = [Plus7Program.by_url(opts.url)]
-    elif opts.program or opts.search:
-        if opts.program:
-            programs = ArtePlus7.search(ArtePlus7.PROGRAMS[opts.program])
-        else:
-            programs = ArtePlus7.search(opts.search)
+    elif opts.program:
+        programs = ArtePlus7.search(ArtePlus7.PROGRAMS[opts.program])
+    else:
+        raise ValueError('Invalid option, should be url, program')
 
-        if not programs:
-            logging.error('No videos found for program: %s', search_str)
-            exit(1)
-        if opts.num_programs:
-            programs = programs[0:opts.num_programs]
-        elif len(programs) > 1:
-            logging.info('Found multiple videos, using the last one')
-            programs = programs[0:1]
+    # Nothing found
+    if not programs:
+        logging.error('Error: No videos found')
+        exit(1)
 
-    #for program in (programs[0],):
-    for program in programs:
-        if opts.quality is not None:
-            program.download(opts.quality, opts.download_directory)
-        else:
-            print(json.dumps(program.infos(), indent=4, sort_keys=True))
+    logging.info('Found %d videos, using last one', len(programs))
+    program = programs[0]
+
+    if opts.quality is not None:
+        program.download(opts.quality, opts.download_directory)
+    else:
+        print(json.dumps(program.infos(), indent=4, sort_keys=True))
 
 
 if __name__ == '__main__':
