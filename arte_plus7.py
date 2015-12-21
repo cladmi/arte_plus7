@@ -231,6 +231,8 @@ def parser():
     vid_parser.add_argument('-p', '--program',
                             choices=ArtePlus7.PROGRAMS.keys(),
                             help=u'Download given program')
+    vid_parser.add_argument('-s', '--search', help=u'Search programs')
+
     _parser.add_argument(
         '-n', '--num-programs', type=int, default=1,
         help=u'Specify number of programs to download (-1 for all).')
@@ -256,8 +258,10 @@ def main():
         programs = [Plus7Program.by_url(opts.url)]
     elif opts.program:
         programs = ArtePlus7.search(ArtePlus7.PROGRAMS[opts.program])
+    elif opts.search:
+        programs = ArtePlus7.search(opts.search)
     else:
-        raise ValueError('Invalid option, should be url, program')
+        raise ValueError('Invalid option, should be url, program or search')
 
     # Nothing found
     if not programs:
