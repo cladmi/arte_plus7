@@ -224,6 +224,10 @@ class ArtePlus7(object):
         vid_parser.add_argument('-p', '--program',
                                 choices=ArtePlus7.PROGRAMS.keys(),
                                 help=u'Download given program')
+        vid_parser.add_argument('-s', '--search', help=u'Search given program')
+
+        parser.add_argument('-n', '--num-programs', type=int,
+                            help=u'Max number of programs to download')
 
         parser.add_argument('-q', '--quality',
                             choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
@@ -242,18 +246,24 @@ def main():
     opts = ArtePlus7.parser().parse_args()
 
     if opts.url:
-        program = Plus7Program.by_url(opts.url)
-    elif opts.program:
+        programs = [Plus7Program.by_url(opts.url)]
+    elif opts.program or opts.search:
+        if opts.program:
+            programs = ArtePlus7.search(ArtePlus7.PROGRAMS[opts.program])
+        else:
+            programs = ArtePlus7.search(opts.search)
 
-        programs = ArtePlus7.search(ArtePlus7.PROGRAMS[opts.program])
         if not programs:
             logging.error('No videos found for program: %s', search_str)
             exit(1)
+        if opts.num_programs:
+            programs = programs[0:opts.num_programs]
         elif len(programs) > 1:
             logging.info('Found multiple videos, using the last one')
+            programs = programs[0:1]
 
-    for program in (programs[0],):
-    # for program in programs:
+    #for program in (programs[0],):
+    for program in programs:
         if opts.quality is not None:
             program.download(opts.quality, opts.download_directory)
         else:
