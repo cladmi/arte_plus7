@@ -50,14 +50,16 @@ import json
 import subprocess
 import argparse
 import logging
-logging.basicConfig(level=logging.DEBUG)
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
+LOGGER.addHandler(logging.StreamHandler())
 
 __version__ = '2.X.X'
 
 
 def page_read(url):
     """Download the page and return the utf-8 decoded result."""
-    logging.debug('Reading %s', url)
+    LOGGER.debug('Reading %s', url)
     return urlopen(url).read().decode('utf-8')
 
 
@@ -108,7 +110,7 @@ class Plus7Program(object):
         dl_name = os.path.join(directory, dl_name)
 
         cmd = ['wget', '--continue', '-O', dl_name, url]
-        logging.info(' '.join(cmd))
+        LOGGER.info(' '.join(cmd))
         subprocess.call(cmd)
 
     @staticmethod
@@ -174,7 +176,7 @@ class ArtePlus7(object):
 
         It will be passed directly as a search query string
         """
-        logging.info('Searching %s', search_str)
+        LOGGER.info('Searching %s', search_str)
         url = cls.PROGRAMS_SEARCH.format(search_str)
         soup = page_soup(page_read(url))
         tag = soup.find(cls.search_results)
@@ -225,6 +227,7 @@ def parser():
     """ arte_plus_7 parser """
     _parser = argparse.ArgumentParser(
         description=u'ArtePlus7 videos download')
+    _parser.add_argument('-v', '--verbose', action='store_true', default=False)
     vid_parser = _parser.add_mutually_exclusive_group(required=True)
     vid_parser.add_argument('-u', '--url',
                             help=u'Arte page to download video from')
@@ -252,6 +255,8 @@ def parser():
 def main():
     """ arte_plus_7 main function """
     opts = parser().parse_args()
+    if opts.verbose:
+        LOGGER.setLevel(logging.DEBUG)
 
     # Get programs
     if opts.url:
@@ -265,10 +270,10 @@ def main():
 
     # Nothing found
     if not programs:
-        logging.error('Error: No videos found')
+        LOGGER.error('Error: No videos found')
         exit(1)
 
-    logging.info('Found %d videos, using %d', len(programs), opts.num_programs)
+    LOGGER.info('Found %d videos, using %d', len(programs), opts.num_programs)
     programs = programs[0:opts.num_programs]
 
     # Iterate over programs selection
