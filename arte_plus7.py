@@ -231,6 +231,9 @@ def parser():
     vid_parser.add_argument('-p', '--program',
                             choices=ArtePlus7.PROGRAMS.keys(),
                             help=u'Download given program')
+    _parser.add_argument(
+        '-n', '--num-programs', type=int, default=1,
+        help=u'Specify number of programs to download (-1 for all).')
 
     _parser.add_argument('-q', '--quality',
                          choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
@@ -261,13 +264,15 @@ def main():
         logging.error('Error: No videos found')
         exit(1)
 
-    logging.info('Found %d videos, using last one', len(programs))
-    program = programs[0]
+    logging.info('Found %d videos, using %d', len(programs), opts.num_programs)
+    programs = programs[0:opts.num_programs]
 
-    if opts.quality is not None:
-        program.download(opts.quality, opts.download_directory)
-    else:
-        print(json.dumps(program.infos(), indent=4, sort_keys=True))
+    # Iterate over programs selection
+    for program in programs:
+        if opts.quality is not None:
+            program.download(opts.quality, opts.download_directory)
+        else:
+            print(json.dumps(program.infos(), indent=4, sort_keys=True))
 
 
 if __name__ == '__main__':
