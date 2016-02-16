@@ -199,26 +199,29 @@ class ArtePlus7(object):
     def search_results(tag):
         """ Tells in this tag is the requested json url file """
         # Script matching
-        script_re = re.compile(r"require\('js/page/search'\)\(")
+        script_re = re.compile(r'var element = React.createElement\(Search, {')
 
         keep = True
         keep = keep and tag.get('type', None) == 'text/javascript'
-        keep = keep and bool(script_re.match(tag.text.strip()))
+        keep = keep and bool(script_re.search(tag.text.strip()))
 
         return keep
 
     @staticmethod
     def extract_program_dict(text):
         """Extract program dict from script tag."""
+        entry = 'initialResults: '
+        tail = '.programs,'
+
         line = ''
         for line in text.splitlines():
-            if re.search('results:', line):
+            if re.search(entry, line):
                 break
         else:
-            raise ValueError("'results:' not in text:\n%s" % text)
+            raise ValueError("'%s' not in text:\n%s" % (entry, text))
 
-        line = re.sub(r'^\s*results: ', '', line)
-        line = re.sub(r',$', '', line)
+        line = re.sub(r'^\s*%s' % entry, '', line)
+        line = re.sub(r'%s$' % tail, '', line)
 
         return json.loads(line)
 
