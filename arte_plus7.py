@@ -78,20 +78,24 @@ class Plus7Program(object):
 
     def __init__(self, video_id):
         json_url = self.JSON_URL.format(self._short_id(video_id))
+        debug_id = '%s:%s' % (video_id, json_url)
         try:
             page = page_read(json_url)
         except HTTPError:
-            raise ValueError('No JSON for id: %s:%s' % (video_id, json_url))
+            raise ValueError('No JSON for id: %s' % debug_id)
         _json = json.loads(page)
 
         player = _json['videoJsonPlayer']
 
         # Read infos
-        self.timestamp = player['videoBroadcastTimestamp'] / 1000.0
-        self.date = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
-        self.name = player['VST']['VNA']
-        self.full_name = '{self.name}_{self.date}'.format(self=self)
-        self.urls = self._extract_videos(player['VSR'])
+        try:
+            self.timestamp = player['videoBroadcastTimestamp'] / 1000.0
+            self.date = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
+            self.name = player['VST']['VNA']
+            self.full_name = '{self.name}_{self.date}'.format(self=self)
+            self.urls = self._extract_videos(player['VSR'])
+        except KeyError as err:
+            raise ValueError('Incomplete JSON for id: %s: %s' % (err, debug_id))
 
     def infos(self, values=('date', 'name', 'full_name', 'urls')):
         """Return a dict describing the object."""
@@ -186,8 +190,9 @@ class ArtePlus7(object):
         for program in program_dict['programs']:
             try:
                 prog = Plus7Program(program['id'])
-            except ValueError:
-                pass  # Ignore 'previews'
+            except ValueError as err:
+                # Ignore 'previews' or 'outdated'
+                LOGGER.debug('Error while reading program: %r' % err)
             else:
                 programs.append(prog)
 
