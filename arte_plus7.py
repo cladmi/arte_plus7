@@ -87,6 +87,10 @@ class Plus7Program(object):
 
         player = _json['videoJsonPlayer']
 
+        if player.get('custom_msg', {}).get('type', None) == 'error':
+            raise ValueError("Error: '%s': %s" % (player['custom_msg']['msg'],
+                                                  debug_id))
+
         # Read infos
         try:
             self.timestamp = player['videoBroadcastTimestamp'] / 1000.0
