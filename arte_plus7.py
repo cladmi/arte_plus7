@@ -276,8 +276,10 @@ def main():
         LOGGER.error('Error: No videos found')
         exit(1)
 
-    LOGGER.info('Found %d videos, using %d', len(programs), opts.num_programs)
-    programs = programs[0:opts.num_programs]
+    num_progs = len(programs) if opts.num_programs == -1 else opts.num_programs
+
+    LOGGER.info('Found %d videos, using %d', len(programs), num_progs)
+    programs = programs[0:num_progs]
 
     # Iterate over programs selection
     for program in programs:
