@@ -72,8 +72,8 @@ class Plus7Program(object):
 
     :param video_id: video unique id
     """
-    JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/D/'
-                '{0}_PLUS7-D/ALL/ALL.json')
+    JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/F/'
+                '{0}_PLUS7-F/ALL/ALL.json')
 
     def __init__(self, video_id):
         json_url = self.JSON_URL.format(self._short_id(video_id))
