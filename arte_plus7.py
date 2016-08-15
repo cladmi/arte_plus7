@@ -33,6 +33,7 @@ import subprocess
 import argparse
 import logging
 from datetime import datetime
+import unicodedata
 
 # pylint:disable=locally-disabled,import-error,no-name-in-module
 try:
@@ -90,6 +91,7 @@ class Plus7Program(object):
             self.date = self._date_from_timestamp(self.timestamp)
             self.name = player['VST']['VNA']
             self.full_name = '{self.name}_{self.date}'.format(self=self)
+            self.title = self._sanitize_title(self._title(player))
             self.urls = self._extract_videos(player['VSR'])
         except KeyError as err:
             raise ValueError('Incomplete JSON for id: %s: %s' %
@@ -100,7 +102,37 @@ class Plus7Program(object):
         """Format timestamp to date string."""
         return datetime.fromtimestamp(timestamp).strftime(fmt)
 
-    def infos(self, values=('date', 'name', 'full_name', 'urls')):
+    @staticmethod
+    def _title(player):
+        return player.get('VSU', '') or player.get('VTI', '')
+
+    @staticmethod
+    def _sanitize_title(title):
+        u"""Remove special characters
+
+        http://sametmax.com/transformer-des-caracteres-speciaux-en-ascii/
+
+        >>> Plus7Program._sanitize_title(u'La bière, cette créature méconnue')
+        'La_biere,_cette_creature_meconnue'
+        >>>
+        >>> Plus7Program._sanitize_title(u'Les Chiens de Navarre / '
+        ...                              u'Chelsea Wolfe / OG Maco')
+        'Les_Chiens_de_Navarre_-_Chelsea_Wolfe_-_OG_Maco'
+        >>> Plus7Program._sanitize_title(u'Le veganisme /'
+        ...                              ' attention aux carences ?')
+        'Le_veganisme_-_attention_aux_carences'
+
+        """
+        title = unicodedata.normalize('NFKD', title)
+        title = title.encode('ascii', 'ignore').decode('ascii')
+        title = title.replace(' ', '_')
+        title = title.replace('?', '_')
+        title = title.replace('/', '-')
+        title = title.replace(':', '-')
+        title = title.strip('_')
+        return str(title)
+
+    def infos(self, values=('date', 'name', 'full_name', 'urls', 'title')):
         """Return a dict describing the object."""
         values = set(values)
         ret = {p: v for p, v in self.__dict__.items() if p in values}
