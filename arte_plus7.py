@@ -55,7 +55,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler())
 
-__version__ = '2.2.0'
+__version__ = '2.3.0'
 
 
 def page_read(url):
@@ -271,6 +271,9 @@ def parser():
     _parser = argparse.ArgumentParser(
         description=u'ArtePlus7 videos download')
     _parser.add_argument('-v', '--verbose', action='store_true', default=False)
+    _parser.add_argument('--version', action='version',
+                         version='%(prog)s {0}'.format(__version__))
+
     vid_parser = _parser.add_mutually_exclusive_group(required=True)
     vid_parser.add_argument('-u', '--url',
                             help=u'Arte page to download video from')
