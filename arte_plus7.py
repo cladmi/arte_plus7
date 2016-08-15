@@ -69,6 +69,11 @@ def page_soup(page):
     return bs4.BeautifulSoup(page, 'html.parser')
 
 
+def _json_dumps(obj):
+    """Dumps object to JSON"""
+    print(json.dumps(obj, indent=4, sort_keys=True))
+
+
 class Plus7Program(object):
     """Describes an ArtePlus7 video.
 
