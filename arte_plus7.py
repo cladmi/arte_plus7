@@ -44,6 +44,7 @@ except ImportError:
     from urllib2 import urlopen
     from urllib2 import HTTPError
 
+import unicodedata
 from datetime import datetime
 import bs4
 import json
@@ -97,11 +98,36 @@ class Plus7Program(object):
             self.date = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
             self.name = player['VST']['VNA']
             self.full_name = '{self.name}_{self.date}'.format(self=self)
+            self.title = self._sanitize_title(self._title(player))
             self.urls = self._extract_videos(player['VSR'])
         except KeyError as err:
             raise ValueError('Incomplete JSON for id: %s: %s' % (err, debug_id))
 
-    def infos(self, values=('date', 'name', 'full_name', 'urls')):
+    @staticmethod
+    def _title(player):
+        return player.get('VSU', '') or player.get('VTI', '')
+
+    @staticmethod
+    def _sanitize_title(title):
+        """Remove special characters
+
+        http://sametmax.com/transformer-des-caracteres-speciaux-en-ascii/
+
+        >>> Plus7Program._sanitize_title('La bière, cette créature méconnue')
+        'La_biere,_cette_creature_meconnue'
+        >>> Plus7Program._sanitize_title('Les Chiens de Navarre / '
+        ...                              'Chelsea Wolfe / OG Maco')
+        'Les_Chiens_de_Navarre_-_Chelsea_Wolfe_-_OG_Maco'
+
+        """
+        title = unicodedata.normalize('NFKD', title)
+        title = title.encode('ascii', 'ignore').decode('ascii')
+        title = title.replace(' ', '_')
+        title = title.replace('/', '-')
+        title = title.replace(':', '-')
+        return str(title)
+
+    def infos(self, values=('date', 'name', 'full_name', 'urls', 'title')):
         """Return a dict describing the object."""
         values = set(values)
         ret = {p: v for p, v in self.__dict__.items() if p in values}
