@@ -81,6 +81,8 @@ class Plus7Program(object):
     """
     JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/F/'
                 '{0}_PLUS7-F/ALL/ALL.json')
+    LANGS = {'FR': {'FR', 'VF', 'VOF', 'VOSTF'}}
+    # 'DE': {'DE': {'VA'}}  missing stuff maybe
 
     def __init__(self, video_id):
         json_url = self.JSON_URL.format(self._short_id(video_id))
@@ -138,30 +140,48 @@ class Plus7Program(object):
         ret = {p: v for p, v in self.__dict__.items() if p in values}
         return ret
 
-    def download(self, quality, directory=None):
+    def download(self, quality, directory=None, version=None):
         """Download the video."""
+        versions = self.urls.keys()
 
-        url = self.urls[quality]
+        if version is not None:
+            _version = version
+        else:
+            # Select version automatically
+            if len(self.urls) == 1:
+                _version = versions[0]
+            else:
+                raise ValueError('Multiple versions, should select one: %s' %
+                                 list(versions))
+
+        url = self.urls[_version][quality]
         directory = directory or '.'
 
-        dl_name = '{name}_{quality}.mp4'
-        dl_name = dl_name.format(name=self.full_name, quality=quality)
+        if version:
+            dl_name = '{name}_{quality}_{version}.mp4'
+        else:
+            dl_name = '{name}_{quality}.mp4'
+        dl_name = dl_name.format(name=self.full_name, quality=quality,
+                                 version=version)
         dl_name = os.path.join(directory, dl_name)
 
         cmd = ['wget', '--continue', '-O', dl_name, url]
         LOGGER.info(' '.join(cmd))
         subprocess.call(cmd)
 
-    @staticmethod
-    def _extract_videos(vsr, media='mp4', lang='FR'):
-        videos = {}
+    @classmethod
+    def _extract_videos(cls, vsr, media='mp4', lang='FR'):
+        langs = cls.LANGS[lang]
+        all_videos = {}
         for video in vsr.values():
             if video['mediaType'] != media:
                 continue
-            if video['versionShortLibelle'] != lang:
+            video_lang = video['versionShortLibelle']
+            if video_lang not in langs:
                 continue
+            videos = all_videos.setdefault(video_lang, {})
             videos[video['VQU']] = video['url']
-        return videos
+        return all_videos
 
     @staticmethod
     def _short_id(video_id):
@@ -289,6 +309,8 @@ def parser():
     _parser.add_argument('-q', '--quality',
                          choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
                          help=u'Video quality to download')
+    _parser.add_argument('-lv', '--lang-version',
+                         help=u'Select between different version in a lang')
     _parser.add_argument('--keep-artifacts', action='store_true',
                          default=False,
                          help=u'Keep intermediate files artifacts')
@@ -327,7 +349,13 @@ def main():
     # Iterate over programs selection
     for program in programs:
         if opts.quality is not None:
-            program.download(opts.quality, opts.download_directory)
+            try:
+                program.download(opts.quality,
+                                 directory=opts.download_directory,
+                                 version=opts.lang_version)
+            except ValueError as err:
+                LOGGER.error(err)
+                exit(1)
         else:
             print(json.dumps(program.infos(), indent=4, sort_keys=True))
 
