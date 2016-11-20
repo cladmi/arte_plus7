@@ -203,6 +203,14 @@ class ArtePlus7(object):
 
         return programs
 
+    @classmethod
+    def program(cls, program):
+        """Search program and select only results that are named 'program'."""
+        search_str = ArtePlus7.PROGRAMS[program]
+        all_programs = cls.search(search_str)
+        programs = [p for p in all_programs if p.name == program]
+        return programs
+
     @staticmethod
     def _programs_dict_from_page(page):
         """Return programs dict from page.
@@ -261,7 +269,7 @@ def main():
     if opts.url:
         programs = [Plus7Program.by_url(opts.url)]
     elif opts.program:
-        programs = ArtePlus7.search(ArtePlus7.PROGRAMS[opts.program])
+        programs = ArtePlus7.program(opts.program)
     elif opts.search:
         programs = ArtePlus7.search(opts.search)
     else:
