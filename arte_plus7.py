@@ -185,10 +185,10 @@ class ArtePlus7(object):
         """
         LOGGER.info('Searching %s', search_str)
         url = cls.PROGRAMS_SEARCH.format(search_str)
-        soup = page_soup(page_read(url))
-        tag = soup.find(cls.search_results)
+        page = page_read(url)
 
-        program_dict = cls.extract_program_dict(tag.text)
+        program_dict = cls._programs_dict_from_page(page)
+
         programs = []
         for program in program_dict['programs']:
             try:
@@ -204,34 +204,22 @@ class ArtePlus7(object):
         return programs
 
     @staticmethod
-    def search_results(tag):
-        """ Tells in this tag is the requested json url file """
-        # Script matching
-        script_re = re.compile(r'var element = React.createElement\(Search, {')
+    def _programs_dict_from_page(page):
+        """Return programs dict from page.
 
-        keep = True
-        keep = keep and tag.get('type', None) == 'text/javascript'
-        keep = keep and bool(script_re.search(tag.text.strip()))
+        Programs dict is stored as a JSON in attribute 'data-results'
+        from id='search-container' div.
 
-        return keep
+            <div
+            id="search-container"
+            data-results="{...PROGRAMS_DICT_JSON...}"
 
-    @staticmethod
-    def extract_program_dict(text):
-        """Extract program dict from script tag."""
-        entry = 'initialResults: '
-        tail = '.programs,'
+        """
+        soup = page_soup(page)
+        tag = soup.find(id='search-container')
+        programs = json.loads(tag.attrs['data-results'])
 
-        line = ''
-        for line in text.splitlines():
-            if re.search(entry, line):
-                break
-        else:
-            raise ValueError("'%s' not in text:\n%s" % (entry, text))
-
-        line = re.sub(r'^\s*%s' % entry, '', line)
-        line = re.sub(r'%s$' % tail, '', line)
-
-        return json.loads(line)
+        return programs
 
 
 def parser():
