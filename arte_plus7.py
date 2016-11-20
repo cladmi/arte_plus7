@@ -22,13 +22,6 @@ from the list
     # Direct access to some pre-stored programs
     ./arte_plus_7.py -p tracks --quality <MQ|HQ|EQ|SQ'>
 
-
-Debug:
-
-    # Use the option --keep-artifacts to save intermediate files to help adding
-    # features
-    ./arte_plus_7.py -u URL --keep-artifacts
-
 """
 
 from __future__ import print_function
@@ -261,9 +254,6 @@ def parser():
     _parser.add_argument('-q', '--quality',
                          choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
                          help=u'Video quality to download')
-    _parser.add_argument('--keep-artifacts', action='store_true',
-                         default=False,
-                         help=u'Keep intermediate files artifacts')
 
     _parser.add_argument('-d', '--download-directory', default='.',
                          help=u'Directory where to save file')
