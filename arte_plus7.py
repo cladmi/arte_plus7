@@ -35,6 +35,11 @@ from __future__ import print_function
 
 import re
 import os.path
+import json
+import subprocess
+import argparse
+import logging
+from datetime import datetime
 
 # pylint:disable=locally-disabled,import-error,no-name-in-module
 try:
@@ -44,12 +49,7 @@ except ImportError:
     from urllib2 import urlopen
     from urllib2 import HTTPError
 
-from datetime import datetime
 import bs4
-import json
-import subprocess
-import argparse
-import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler())
@@ -94,12 +94,18 @@ class Plus7Program(object):
         # Read infos
         try:
             self.timestamp = player['videoBroadcastTimestamp'] / 1000.0
-            self.date = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
+            self.date = self._date_from_timestamp(self.timestamp)
             self.name = player['VST']['VNA']
             self.full_name = '{self.name}_{self.date}'.format(self=self)
             self.urls = self._extract_videos(player['VSR'])
         except KeyError as err:
-            raise ValueError('Incomplete JSON for id: %s: %s' % (err, debug_id))
+            raise ValueError('Incomplete JSON for id: %s: %s' %
+                             (err, debug_id))
+
+    @staticmethod
+    def _date_from_timestamp(timestamp, fmt='%Y-%m-%d'):
+        """Format timestamp to date string."""
+        return datetime.fromtimestamp(timestamp).strftime(fmt)
 
     def infos(self, values=('date', 'name', 'full_name', 'urls')):
         """Return a dict describing the object."""
@@ -196,7 +202,7 @@ class ArtePlus7(object):
                 prog = Plus7Program(program['id'])
             except ValueError as err:
                 # Ignore 'previews' or 'outdated'
-                LOGGER.debug('Error while reading program: %r' % err)
+                LOGGER.debug('Error while reading program: %r', err)
             else:
                 programs.append(prog)
 
