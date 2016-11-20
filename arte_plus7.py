@@ -163,11 +163,11 @@ class Plus7Program(object):
         directory = directory or '.'
 
         if version:
-            dl_name = '{name}_{quality}_{version}.mp4'
+            dl_name = '{name}_{quality}_{title}_{version}.mp4'
         else:
-            dl_name = '{name}_{quality}.mp4'
+            dl_name = '{name}_{quality}_{title}.mp4'
         dl_name = dl_name.format(name=self.full_name, quality=quality,
-                                 version=version)
+                                 version=version, title=self.title)
         dl_name = os.path.join(directory, dl_name)
 
         cmd = ['wget', '--continue', '-O', dl_name, url]
