@@ -239,6 +239,9 @@ def parser():
     _parser = argparse.ArgumentParser(
         description=u'ArtePlus7 videos download')
     _parser.add_argument('-v', '--verbose', action='store_true', default=False)
+    _parser.add_argument('--version', action='version',
+                         version='%(prog)s {0}'.format(__version__))
+
     vid_parser = _parser.add_mutually_exclusive_group(required=True)
     vid_parser.add_argument('-u', '--url',
                             help=u'Arte page to download video from')
