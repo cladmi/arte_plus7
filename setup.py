@@ -25,6 +25,7 @@ setup(
     name=NAME,
     version=get_version(NAME),
     description='CLI script to get videos from Arte plus 7 using their URL',
+    long_description=open('README.md').read(),
     url='https://github.com/cladmi/arte_plus7',
     author='cladmi',
     author_email='hartergaetan@gmail.com',
@@ -41,4 +42,5 @@ setup(
         'Topic :: Utilities',
     ],
     install_requires=['argparse', 'beautifulsoup4'],
+    include_package_data=True,
 )
