@@ -8,6 +8,14 @@ from setuptools import setup
 
 NAME = 'arte_plus7'
 
+LONG_DESCRIPTION_FILES = ['README.rst', 'CHANGELOG.rst']
+
+
+def cat(files, join_str=''):
+    """Concatenate `files` content with `join_str` between them."""
+    files_content = (open(f).read() for f in files)
+    return join_str.join(files_content)
+
 
 def get_version(module):
     """ Extract package version without importing file
@@ -25,7 +33,7 @@ setup(
     name=NAME,
     version=get_version(NAME),
     description='CLI script to get videos from Arte plus 7 using their URL',
-    long_description=open('README.md').read(),
+    long_description=cat(LONG_DESCRIPTION_FILES, '\n\n'),
     url='https://github.com/cladmi/arte_plus7',
     author='cladmi',
     author_email='hartergaetan@gmail.com',
