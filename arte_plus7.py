@@ -47,7 +47,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler())
 
-__version__ = '2.2.3'
+__version__ = '2.2.4'
 
 
 def page_read(url):
@@ -175,7 +175,7 @@ class ArtePlus7(object):
         'karambolage': 'Karambolage',
         'xenius': 'X:enius',
     }
-    PROGRAMS_SEARCH = 'http://www.arte.tv/guide/fr/search?scope=plus7&q={0}'
+    PROGRAMS_SEARCH = 'http://www.arte.tv/fr/search/?q={0}'
 
     @classmethod
     def search(cls, search_str):
