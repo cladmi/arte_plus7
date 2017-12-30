@@ -74,6 +74,7 @@ class Plus7Program(Mapping, object):
     """
     JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/D/'
                 '{0}_PLUS7-D/ALL/ALL.json')
+    INFOS_VALUES = ('date', 'name', 'full_name', 'urls')
 
     def __init__(self, video_id):
         super().__init__()
@@ -107,9 +108,12 @@ class Plus7Program(Mapping, object):
         """Format timestamp to date string."""
         return datetime.fromtimestamp(timestamp).strftime(fmt)
 
-    def infos(self, values=('date', 'name', 'full_name', 'urls')):
-        """Return a dict describing the object."""
-        values = set(values)
+    def infos(self, values=()):
+        """Return a dict describing the object.
+
+        Default to all values in INFOS_VALUES.
+        """
+        values = set(values or self.INFOS_VALUES)
         ret = {p: v for p, v in self.__dict__.items() if p in values}
         return ret
 
