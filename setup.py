@@ -49,6 +49,6 @@ setup(
         'Intended Audience :: End Users/Desktop',
         'Topic :: Utilities',
     ],
-    install_requires=['argparse', 'beautifulsoup4'],
+    install_requires=['argparse', 'beautifulsoup4', 'future'],
     include_package_data=True,
 )

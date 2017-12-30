@@ -24,7 +24,10 @@ from the list
 
 """
 
-from __future__ import print_function
+from __future__ import (absolute_import, division,
+                        print_function, unicode_literals)
+from builtins import *  # pylint:disable=W0401,W0614,W0622
+# pylint:disable=missing-super-argument
 
 import re
 import os.path
@@ -70,6 +73,7 @@ class Plus7Program(object):
                 '{0}_PLUS7-D/ALL/ALL.json')
 
     def __init__(self, video_id):
+        super().__init__()
         json_url = self.JSON_URL.format(self._short_id(video_id))
         debug_id = '%s:%s' % (video_id, json_url)
         try:
@@ -135,8 +139,8 @@ class Plus7Program(object):
     def _short_id(video_id):
         """Return short id used for jon entry.
 
-        >>> Plus7Program._short_id('058941-007-A')
-        '058941-007'
+        >>> print(Plus7Program._short_id('058941-007-A'))
+        058941-007
         """
         return '-'.join(video_id.split('-')[0:2])
 
@@ -150,17 +154,17 @@ class Plus7Program(object):
     def _id_from_url(url):
         """Extract video id from url.
 
-        >>> Plus7Program._id_from_url(
-        ...   'http://www.arte.tv/guide/de/055969-002-A/tracks?autoplay=1')
-        '055969-002-A'
+        >>> print(Plus7Program._id_from_url(
+        ...   'http://www.arte.tv/guide/de/055969-002-A/tracks?autoplay=1'))
+        055969-002-A
 
-        >>> Plus7Program._id_from_url(
-        ...   'http://www.arte.tv/guide/fr/055900-002-A/trop-xx?autoplay=1')
-        '055900-002-A'
+        >>> print(Plus7Program._id_from_url(
+        ...   'http://www.arte.tv/guide/fr/055900-002-A/trop-xx?autoplay=1'))
+        055900-002-A
 
-        >>> Plus7Program._id_from_url(
-        ...   'http://www.arte.tv/guide/fr/058941-008/tracks')
-        '058941-008'
+        >>> print(Plus7Program._id_from_url(
+        ...   'http://www.arte.tv/guide/fr/058941-008/tracks'))
+        058941-008
         """
         url = re.sub(r'\?.*', '', url)
         video_id = url.split('/')[-2]
