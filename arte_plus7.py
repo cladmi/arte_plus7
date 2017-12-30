@@ -38,10 +38,13 @@ import logging
 from datetime import datetime
 
 # pylint:disable=locally-disabled,import-error,no-name-in-module
+# pylint:disable=ungrouped-imports
 try:
+    from collections.abc import Mapping
     from urllib.request import urlopen
     from urllib.error import HTTPError
 except ImportError:
+    from collections import Mapping
     from urllib2 import urlopen
     from urllib2 import HTTPError
 
@@ -64,7 +67,7 @@ def page_soup(page):
     return bs4.BeautifulSoup(page, 'html.parser')
 
 
-class Plus7Program(object):
+class Plus7Program(Mapping, object):
     """Describes an ArtePlus7 video.
 
     :param video_id: video unique id
@@ -173,6 +176,17 @@ class Plus7Program(object):
         url = re.sub(r'/$', '', url)
         video_id = url.split('/')[-2]
         return video_id
+
+    # Mapping implementation
+
+    def __getitem__(self, vlang):
+        return self.urls.__getitem__(vlang)
+
+    def __len__(self):
+        return len(self.urls)
+
+    def __iter__(self):
+        return iter(self.urls)
 
 
 class ArtePlus7(object):
