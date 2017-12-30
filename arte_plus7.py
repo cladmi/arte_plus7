@@ -88,10 +88,11 @@ class Plus7Program(Mapping, object):
     """
     JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/D/'
                 '{0}_PLUS7-D/ALL/ALL.json')
-    INFOS_VALUES = ('date', 'name', 'full_name', 'urls')
+    INFOS_VALUES = ('id', 'date', 'name', 'full_name', 'urls')
 
     def __init__(self, video_id):
         super().__init__()
+        self.id = video_id  # pylint:disable=invalid-name
         json_url = self.JSON_URL.format(self._short_id(video_id))
         debug_id = '%s:%s' % (video_id, json_url)
         try:
