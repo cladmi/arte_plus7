@@ -47,7 +47,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler())
 
-__version__ = '2.2.4'
+__version__ = '3.0.0.dev0'
 
 
 def page_read(url):
