@@ -113,7 +113,7 @@ class Plus7Program(Mapping, object):
             self.date = self._date_from_timestamp(self.timestamp)
             self.name = player['VST']['VNA']
             self.full_name = '{self.name}_{self.date}'.format(self=self)
-            self.urls = self._extract_videos(player['VSR'])
+            self.urls = self._extract_urls(player['VSR'])
         except KeyError as err:
             raise ValueError('Incomplete JSON for id: %s: %s' %
                              (err, debug_id))
@@ -132,7 +132,7 @@ class Plus7Program(Mapping, object):
         ret = {p: v for p, v in self.__dict__.items() if p in values}
         return ret
 
-    def download(self, quality, directory=None):
+    def download(self, lang, quality, directory=None):
         """Download the video."""
 
         url = self.urls[lang][quality]
@@ -142,15 +142,21 @@ class Plus7Program(Mapping, object):
 
         download(url, dl_name, directory)
 
-    @staticmethod
-    def _extract_videos(vsr, media='mp4', lang='FR'):
+    def _extract_urls(self, vsr, media='mp4'):
         videos = {}
         for video in vsr.values():
             if video['mediaType'] != media:
                 continue
-            if video['versionShortLibelle'] != lang:
-                continue
-            videos[video['VQU']] = video['url']
+
+            vlang = video['versionShortLibelle']
+            vquality = video.get('VQU', video.get('quality'))
+
+            url = video['url']
+            name = self._name(vlang, vquality)
+            vurl = video['url']
+
+            videos.setdefault(vlang, {})[vquality] = vurl
+
         return videos
 
     @staticmethod
@@ -287,6 +293,9 @@ def parser():
         '-n', '--num-programs', type=int, default=1,
         help=u'Specify number of programs to download (-1 for all).')
 
+    _parser.add_argument('-l', '--lang',
+                         help=u'Video lang to download')
+
     _parser.add_argument('-q', '--quality',
                          choices=(u'MQ', u'HQ', u'EQ', u'SQ'),
                          help=u'Video quality to download')
@@ -323,9 +332,13 @@ def main():
     programs = programs[0:num_progs]
 
     # Iterate over programs selection
+    if any((opts.quality, opts.lang)) and not all((opts.quality, opts.lang)):
+        print("Use --quality and --lang are required together")
+        exit(1)
+
     for program in programs:
-        if opts.quality is not None:
-            program.download(opts.quality, opts.download_directory)
+        if any((opts.quality, opts.lang)):
+            program.download(opts.lang, opts.quality, opts.download_directory)
         else:
             print(json.dumps(program.infos(), indent=4, sort_keys=True))
 
