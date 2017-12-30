@@ -67,6 +67,20 @@ def page_soup(page):
     return bs4.BeautifulSoup(page, 'html.parser')
 
 
+def download(url, name, directory=None):
+    """Download given url to file `name`.
+
+    If `directory` is set, download to given directory.
+    """
+
+    directory = directory or ''
+    dest = os.path.join(directory, name)
+
+    cmd = ['wget', '--continue', '-O', dest, url]
+    LOGGER.info(' '.join(cmd))
+    return subprocess.call(cmd)
+
+
 class Plus7Program(Mapping, object):
     """Describes an ArtePlus7 video.
 
@@ -120,16 +134,12 @@ class Plus7Program(Mapping, object):
     def download(self, quality, directory=None):
         """Download the video."""
 
-        url = self.urls[quality]
-        directory = directory or '.'
+        url = self.urls[lang][quality]
 
         dl_name = '{name}_{quality}.mp4'
         dl_name = dl_name.format(name=self.full_name, quality=quality)
-        dl_name = os.path.join(directory, dl_name)
 
-        cmd = ['wget', '--continue', '-O', dl_name, url]
-        LOGGER.info(' '.join(cmd))
-        subprocess.call(cmd)
+        download(url, dl_name, directory)
 
     @staticmethod
     def _extract_videos(vsr, media='mp4', lang='FR'):
