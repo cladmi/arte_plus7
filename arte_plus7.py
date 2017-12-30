@@ -93,30 +93,38 @@ class Plus7Program(Mapping, object):
     def __init__(self, video_id):
         super().__init__()
         self.id = video_id  # pylint:disable=invalid-name
-        json_url = self.JSON_URL.format(self._short_id(video_id))
-        debug_id = '%s:%s' % (video_id, json_url)
+
         try:
-            page = page_read(json_url)
-        except HTTPError:
-            raise ValueError('No JSON for id: %s' % debug_id)
-        _json = json.loads(page)
+            page = page_read(self._video_json_url(self.id))
+            video = self._video_json(page)
 
-        player = _json['videoJsonPlayer']
-
-        if player.get('custom_msg', {}).get('type', None) == 'error':
-            raise ValueError("Error: '%s': %s" % (player['custom_msg']['msg'],
-                                                  debug_id))
-
-        # Read infos
-        try:
-            self.timestamp = player['videoBroadcastTimestamp'] / 1000.0
+            self.timestamp = video['videoBroadcastTimestamp'] / 1000.0
             self.date = self._date_from_timestamp(self.timestamp)
-            self.name = player['VST']['VNA']
+            self.name = video['VST']['VNA']
             self.full_name = '{self.name}_{self.date}'.format(self=self)
-            self.urls = self._extract_urls(player['VSR'])
+            self.urls = self._extract_urls(video['VSR'])
+
+        except HTTPError:
+            raise ValueError('%s: No JSON for video' % (self.id))
         except KeyError as err:
-            raise ValueError('Incomplete JSON for id: %s: %s' %
-                             (err, debug_id))
+            raise ValueError('%s: Incomplete JSON for id: %s' % (self.id, err))
+        except ValueError as err:
+            raise ValueError('%s: %s' % (self.id, err))
+
+    @classmethod
+    def _video_json(cls, page):
+        """Extract 'video' json informations from page."""
+        _json = json.loads(page)
+        video = _json['videoJsonPlayer']
+        cls.__detect_video_error(video)
+
+        return video
+
+    @staticmethod
+    def __detect_video_error(video):
+        err_msg = video.get('custom_msg', {}).get('type', None)
+        if err_msg == 'error':
+            raise ValueError('Video Error: %s' % (err_msg))
 
     @staticmethod
     def _date_from_timestamp(timestamp, fmt='%Y-%m-%d'):
@@ -158,6 +166,15 @@ class Plus7Program(Mapping, object):
             videos.setdefault(vlang, {})[vquality] = vurl
 
         return videos
+
+    # Using by giving video URL
+
+    @classmethod
+    def _video_json_url(cls, video_id):
+        """Url to JSON video description."""
+        short_id = cls._short_id(video_id)
+        json_url = cls.JSON_URL.format(short_id)
+        return json_url
 
     @staticmethod
     def _short_id(video_id):
