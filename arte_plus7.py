@@ -165,8 +165,12 @@ class Plus7Program(object):
         >>> print(Plus7Program._id_from_url(
         ...   'http://www.arte.tv/guide/fr/058941-008/tracks'))
         058941-008
+        >>> print(Plus7Program._id_from_url(
+        ...   'https://www.arte.tv/fr/videos/053915-002-A/france-allemagne/'))
+        053915-002-A
         """
         url = re.sub(r'\?.*', '', url)
+        url = re.sub(r'/$', '', url)
         video_id = url.split('/')[-2]
         return video_id
 
