@@ -81,6 +81,39 @@ def download(url, name, directory=None):
     return subprocess.call(cmd)
 
 
+class VideoUrl(str, object):
+    """One video url, behaves like a str."""
+    NAME_FORMAT = '{name}_{date}_{lang}_{quality}.mp4'
+
+    def __new__(cls, url, *args, **kwargs):  # pylint:disable=unused-argument
+        # explicitly only pass url to the str constructor
+        return super().__new__(cls, url)
+
+    def __init__(self, url, program, lang, quality):
+        # Should work with both python2 and python3
+        str.__init__(url)
+        super().__init__()
+
+        self.program = program
+        self.lang = lang
+        self.quality = quality
+
+    @property
+    def full_name(self):
+        """Video full name from NAME_FORMAT."""
+        return self.NAME_FORMAT.format(
+            name=self.program.name, date=self.program.date,
+            lang=self.lang, quality=self.quality)
+
+    @classmethod
+    def from_json_dict(cls, program, vjson):
+        """Create video from result JSON dict."""
+        url = vjson['url']
+        lang = vjson['versionShortLibelle']
+        quality = vjson.get('VQU', vjson.get('quality'))
+        return cls(url, program, lang, quality)
+
+
 class Plus7Program(Mapping, object):
     """Describes an ArtePlus7 video.
 
@@ -142,28 +175,16 @@ class Plus7Program(Mapping, object):
 
     def download(self, lang, quality, directory=None):
         """Download the video."""
-
-        url = self.urls[lang][quality]
-
-        dl_name = '{name}_{quality}.mp4'
-        dl_name = dl_name.format(name=self.full_name, quality=quality)
-
-        download(url, dl_name, directory)
+        video = self.urls[lang][quality]
+        download(video, video.full_name, directory)
 
     def _extract_urls(self, vsr, media='mp4'):
         videos = {}
         for video in vsr.values():
             if video['mediaType'] != media:
                 continue
-
-            vlang = video['versionShortLibelle']
-            vquality = video.get('VQU', video.get('quality'))
-
-            url = video['url']
-            name = self._name(vlang, vquality)
-            vurl = video['url']
-
-            videos.setdefault(vlang, {})[vquality] = vurl
+            url = VideoUrl.from_json_dict(self, video)
+            videos.setdefault(url.lang, {})[url.quality] = url
 
         return videos
 
