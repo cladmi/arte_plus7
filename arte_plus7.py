@@ -189,8 +189,7 @@ class Plus7Program(Mapping, object):
         Default to all values in INFOS_VALUES.
         """
         values = set(values or self.INFOS_VALUES)
-        ret = {p: v for p, v in self.__dict__.items() if p in values}
-        return ret
+        return {v: getattr(self, v) for v in values}
 
     def download(self, lang, quality, directory=None):
         """Download the video."""
