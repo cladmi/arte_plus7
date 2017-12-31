@@ -35,6 +35,7 @@ import json
 import subprocess
 import argparse
 import logging
+import time
 from datetime import datetime
 
 # pylint:disable=locally-disabled,import-error,no-name-in-module
@@ -119,8 +120,8 @@ class Plus7Program(Mapping, object):
 
     :param video_id: video unique id
     """
-    JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/D/'
-                '{0}_PLUS7-D/ALL/ALL.json')
+    JSON_URL = 'https://api.arte.tv/api/player/v1/config/fr/{0}'
+
     INFOS_VALUES = ('id', 'date', 'name', 'urls')
     DATE_FMT = '%Y-%m-%d'
 
@@ -165,11 +166,13 @@ class Plus7Program(Mapping, object):
 
     def __timestamp(self):
         """Return video timestamp from dict."""
-        return self._video['videoBroadcastTimestamp'] / 1000.0
+        fmt = '%d/%m/%Y %H:%M:%S %z'
+        time_struct = time.strptime(self._video['VRA'], fmt)
+        return time.mktime(time_struct)
 
     def __name(self):
         """Return video name from dict."""
-        return self._video['VST']['VNA']
+        return self._video['VTI']
 
     def __urls(self, media='mp4'):
         """Return video urls from dict."""
