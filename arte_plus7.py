@@ -129,13 +129,13 @@ class Plus7Program(Mapping, object):
 
         try:
             page = page_read(self._video_json_url(self.id))
-            video = self._video_json(page)
+            self._video = self._video_json(page)
 
-            self.timestamp = video['videoBroadcastTimestamp'] / 1000.0
+            self.timestamp = self.__timestamp()
             self.date = self._date_from_timestamp(self.timestamp)
-            self.name = video['VST']['VNA']
+            self.name = self.__name()
             self.full_name = '{self.name}_{self.date}'.format(self=self)
-            self.urls = self._extract_urls(video['VSR'])
+            self.urls = self.__urls()
 
         except HTTPError:
             raise ValueError('%s: No JSON for video' % (self.id))
@@ -159,6 +159,25 @@ class Plus7Program(Mapping, object):
         if err_msg == 'error':
             raise ValueError('Video Error: %s' % (err_msg))
 
+    def __timestamp(self):
+        """Return video timestamp from dict."""
+        return self._video['videoBroadcastTimestamp'] / 1000.0
+
+    def __name(self):
+        """Return video timestamp from dict."""
+        return self._video['VST']['VNA']
+
+    def __urls(self, media='mp4'):
+        """Return video urls from dict."""
+        videos = {}
+        for vdict in self._video['VSR'].values():
+            if vdict['mediaType'] != media:
+                continue
+            url = VideoUrl.from_json_dict(self, vdict)
+            videos.setdefault(url.lang, {})[url.quality] = url
+
+        return videos
+
     @staticmethod
     def _date_from_timestamp(timestamp, fmt='%Y-%m-%d'):
         """Format timestamp to date string."""
@@ -177,16 +196,6 @@ class Plus7Program(Mapping, object):
         """Download the video."""
         video = self.urls[lang][quality]
         download(video, video.full_name, directory)
-
-    def _extract_urls(self, vsr, media='mp4'):
-        videos = {}
-        for video in vsr.values():
-            if video['mediaType'] != media:
-                continue
-            url = VideoUrl.from_json_dict(self, video)
-            videos.setdefault(url.lang, {})[url.quality] = url
-
-        return videos
 
     # Using by giving video URL
 
