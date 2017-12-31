@@ -177,11 +177,15 @@ class Plus7Program(Mapping, object):
     def __urls(self, media='mp4'):
         """Return video urls from dict."""
         videos = {}
-        for vdict in self._video['VSR'].values():
+        vdicts = self._video['VSR'] or {}  # Can be an empty list
+        for vdict in vdicts.values():
             if vdict['mediaType'] != media:
                 continue
             url = VideoUrl.from_json_dict(self, vdict)
             videos.setdefault(url.lang, {})[url.quality] = url
+
+        if not videos:
+            raise ValueError('No videos url found')
 
         return videos
 
