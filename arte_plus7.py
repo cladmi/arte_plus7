@@ -121,7 +121,8 @@ class Plus7Program(Mapping, object):
     """
     JSON_URL = ('http://arte.tv/papi/tvguide/videos/stream/player/D/'
                 '{0}_PLUS7-D/ALL/ALL.json')
-    INFOS_VALUES = ('id', 'date', 'name', 'full_name', 'urls')
+    INFOS_VALUES = ('id', 'date', 'name', 'urls')
+    DATE_FMT = '%Y-%m-%d'
 
     def __init__(self, video_id):
         super().__init__()
@@ -131,11 +132,9 @@ class Plus7Program(Mapping, object):
             page = page_read(self._video_json_url(self.id))
             self._video = self._video_json(page)
 
-            self.timestamp = self.__timestamp()
-            self.date = self._date_from_timestamp(self.timestamp)
             self.name = self.__name()
-            self.full_name = '{self.name}_{self.date}'.format(self=self)
             self.urls = self.__urls()
+            self.timestamp = self.__timestamp()
 
         except HTTPError:
             raise ValueError('%s: No JSON for video' % (self.id))
@@ -143,6 +142,11 @@ class Plus7Program(Mapping, object):
             raise ValueError('%s: Incomplete JSON for id: %s' % (self.id, err))
         except ValueError as err:
             raise ValueError('%s: %s' % (self.id, err))
+
+    @property
+    def date(self):
+        """Format timestamp to date string."""
+        return datetime.fromtimestamp(self.timestamp).strftime(self.DATE_FMT)
 
     @classmethod
     def _video_json(cls, page):
@@ -164,7 +168,7 @@ class Plus7Program(Mapping, object):
         return self._video['videoBroadcastTimestamp'] / 1000.0
 
     def __name(self):
-        """Return video timestamp from dict."""
+        """Return video name from dict."""
         return self._video['VST']['VNA']
 
     def __urls(self, media='mp4'):
@@ -177,11 +181,6 @@ class Plus7Program(Mapping, object):
             videos.setdefault(url.lang, {})[url.quality] = url
 
         return videos
-
-    @staticmethod
-    def _date_from_timestamp(timestamp, fmt='%Y-%m-%d'):
-        """Format timestamp to date string."""
-        return datetime.fromtimestamp(timestamp).strftime(fmt)
 
     def infos(self, values=()):
         """Return a dict describing the object.
