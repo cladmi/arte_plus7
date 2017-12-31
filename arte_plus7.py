@@ -264,13 +264,12 @@ class Plus7Program(Mapping, object):
 
 class ArtePlus7(object):
     """ArtePlus7 helps using arte website."""
-    PROGRAMS_JSON_URL = 'http://www.arte.tv/guide/fr/plus7.json'
+    SEARCH = 'http://www.arte.tv/guide/api/api/search/fr/{name}/{page}'
     PROGRAMS = {
         'tracks': 'Tracks',
         'karambolage': 'Karambolage',
         'xenius': 'X:enius',
     }
-    PROGRAMS_SEARCH = 'http://www.arte.tv/fr/search/?q={0}'
     program_class = Plus7Program
 
     @classmethod
@@ -280,20 +279,41 @@ class ArtePlus7(object):
         It will be passed directly as a search query string
         """
         LOGGER.info('Searching %s', search_str)
-        url = cls.PROGRAMS_SEARCH.format(search_str)
-        page = page_read(url)
 
-        program_dict = cls._programs_dict_from_page(page)
+        url = cls.SEARCH.format(name=search_str, page=1)
+        programs = cls._get_programs(url, key='teasers')
 
+        return programs
+
+    @classmethod
+    def _get_programs(cls, url, key):
+        """Return programs list for search_str."""
+
+        json_page = json.loads(page_read(url))
+        prog_ids = cls._programs_from_entries(json_page[key])
+        programs = cls._programs_from_ids(prog_ids)
+
+        return programs
+
+    @staticmethod
+    def _programs_from_entries(entries):
+        """Extract programs ids from entries."""
+        entries = [e for e in entries if e['kind'] == 'SHOW']
+        programs = [e['programId'] for e in entries]
+        return programs
+
+    @classmethod
+    def _programs_from_ids(cls, ids):
+        """Return programs list."""
         programs = []
-        for program in program_dict['programs']:
+        for progid in ids:
             try:
-                prog = cls.program_class(program['id'])
+                program = cls.program_class(progid)
             except ValueError as err:
-                # Ignore 'previews' or 'outdated'
+                # Ignore invalid programs 'previews', 'outdated', or no videos
                 LOGGER.debug('Error while reading program: %r', err)
             else:
-                programs.append(prog)
+                programs.append(program)
 
         programs.sort(key=lambda p: p.timestamp, reverse=True)
 
@@ -305,24 +325,6 @@ class ArtePlus7(object):
         search_str = ArtePlus7.PROGRAMS[program]
         all_programs = cls.search(search_str)
         programs = [p for p in all_programs if p.name == program]
-        return programs
-
-    @staticmethod
-    def _programs_dict_from_page(page):
-        """Return programs dict from page.
-
-        Programs dict is stored as a JSON in attribute 'data-results'
-        from id='search-container' div.
-
-            <div
-            id="search-container"
-            data-results="{...PROGRAMS_DICT_JSON...}"
-
-        """
-        soup = page_soup(page)
-        tag = soup.find(id='search-container')
-        programs = json.loads(tag.attrs['data-results'])
-
         return programs
 
 
