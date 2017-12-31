@@ -267,6 +267,7 @@ class ArtePlus7(object):
         'xenius': 'X:enius',
     }
     PROGRAMS_SEARCH = 'http://www.arte.tv/fr/search/?q={0}'
+    program_class = Plus7Program
 
     @classmethod
     def search(cls, search_str):
@@ -283,7 +284,7 @@ class ArtePlus7(object):
         programs = []
         for program in program_dict['programs']:
             try:
-                prog = Plus7Program(program['id'])
+                prog = cls.program_class(program['id'])
             except ValueError as err:
                 # Ignore 'previews' or 'outdated'
                 LOGGER.debug('Error while reading program: %r', err)
